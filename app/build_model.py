@@ -5,7 +5,17 @@ from app.model.model import FeedforwardModel, train, calc_metrics
 
 
 def build_model(X_train, y_train, X_val, y_val, X_test, y_test):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = ""
+    if torch.cuda.is_available():
+        device = "cuda"
+        print(" CUDA available, will be training the model on CUDA GPU. ")
+    elif torch.backends.mps.is_available():
+        device = "mps"
+        print(" MPS backend available, will be training the model on MAC GPU")
+    else:
+        device = "cpu"
+        print(" No GPU found, will be training the model on CPU. ")
+    device = torch.device(device)
     model = FeedforwardModel(len(X_train.T), 8, 0.2, device)
     model.to(device)
     train_dataset = PTDataset(X_train, y_train)

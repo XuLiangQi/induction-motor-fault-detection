@@ -51,12 +51,17 @@ class PTDataset(Dataset):
         return length
     
     def __getitem__(self, index):
-        data_point = torch.tensor(self.data.iloc[index, :])
-        data_point.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-        label = torch.tensor(self.labels[index, :])
-        label.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-
-
+        device = ""
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
+        data_point = torch.tensor(self.data.iloc[index, :]).float()
+        data_point.to(torch.device(device))
+        label = torch.tensor(self.labels[index, :]).float()
+        label.to(torch.device(device))
 
         return data_point, label
     

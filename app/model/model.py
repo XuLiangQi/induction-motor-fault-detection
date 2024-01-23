@@ -57,8 +57,6 @@ def calc_metrics(model: nn.Module,
     accuracy_mean = sum(accuracies)/float(len(accuracies))
     return loss_mean, accuracy_mean.item()
 
-
-
 def train(model: nn.Module,
         dataset_train: Dataset,
         dataset_val: Dataset,
@@ -68,7 +66,7 @@ def train(model: nn.Module,
         device: str):
     
     model.train()
-    print("Model is using GPU:", next(model.parameters()).is_cuda)
+    print("Model is running on:", next(model.parameters()).device)
     optimizer = Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
