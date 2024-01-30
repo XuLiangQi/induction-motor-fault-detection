@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from app.model.model import FeedforwardModel, train, calc_metrics
 from app.hyps import Hyperparameters
+import os
 
 
 def build_model(X_train: pd.DataFrame
@@ -70,5 +71,7 @@ def build_model(X_train: pd.DataFrame
     )
 
     # Save the model
-    torch.save(model.state_dict(), 'app/saved_model/model.pth')
-    print("Model saved. Pth: app/saved_model/ ")
+    save_path = 'app/saved_model/'
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    torch.save(model.state_dict(), save_path + 'model.pth')
