@@ -5,6 +5,17 @@ from torch.utils.data import DataLoader, Dataset
 from torch.optim import Adam
 
 class FeedforwardModel(nn.Module):
+    '''A vanilla neural network model used to predict the type
+    of the motor failure. 
+    
+    Attributes:
+    ----------
+    device: str:
+        The device of which the model will be trained on.
+
+    fc: Sequential
+        The fully connected linear layers used to predict the type of motor failure.
+    '''
     def __init__(self, 
                  num_features: int, 
                  num_classes: int,
@@ -29,12 +40,39 @@ class FeedforwardModel(nn.Module):
         X_train = X_train.to(self.device)
         out = self.fc(X_train)
         return out
-    
+
 def calc_metrics(model: nn.Module,
                  data_loader: DataLoader,
                  device: str) -> (float, float):
-    criterion = nn.CrossEntropyLoss()
+    '''Quantify the performance of the model during training
+    phase.
     
+    Calculate the loss and accuracy of the model's prediction during
+    each batch on each epoch. Calculates the average of all the batches
+    to obtain more repersentative performance metrics.
+    
+    Parameters:
+    ----------
+
+    model: nn.Module
+        The model that needs to be evaluated.
+        
+    data_loader: DataLoader
+        The pytorch data loader object to decompose the data into batches.
+        
+    device: str
+        The device of which the model will be trained on.
+        
+    Returns:
+    -------
+    
+    loss_mean: float
+        The average loss calculated from all batches.
+        
+    accuracy_mean: float
+        The average accuracy calculated from all batches.
+    '''
+    criterion = nn.CrossEntropyLoss()
     losses = []
     accuracies = []
     with torch.no_grad():
@@ -65,7 +103,38 @@ def train(model: nn.Module,
         lr: float,
         early_stop: int,
         device: str):
+    '''Train the model based on parameters provided.
     
+    Parameters:
+    ---------
+    
+    model: nn.Module
+        The model that needs to be trained.
+        
+    dataset_train: Dataset
+        A custom dataset used to feed into dataloader to split
+        training data into batches.
+        
+    dataset_val: Dataset
+        A custom dataset used to feed into dataloader to split
+        validation data into batches.
+        
+    max_epochs: int
+        The maximum epoches (iterations) that the training will perform.
+        
+    batch_size: int
+        The number of data points (rows) contained in each batch.
+        
+    lr: float
+        The learning rate used by the optimizer.
+        
+    early_stop: int
+        The number of epochs to stop the training earlier
+        if the loss is not impoving.
+        
+    device: str
+        The device of which the model will be trained on.
+    '''
     model.train()
     print("Model is running on:", next(model.parameters()).device)
     optimizer = Adam(model.parameters(), lr=lr)
@@ -132,3 +201,4 @@ def train(model: nn.Module,
 
     model.load_state_dict(best_model)
     model.eval()
+    

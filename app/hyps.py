@@ -1,4 +1,6 @@
 class Hyperparameters:
+    '''Hyperparameters class is used to store hyperparameters
+    used in the neural network model'''
     batch_size = 32
     lr = 0.01
     max_iters = 100

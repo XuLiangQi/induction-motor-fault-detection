@@ -3,7 +3,7 @@ from app.tools.data_processing import (PTDataset)
 import torch
 from torch.utils.data import DataLoader
 from app.model.model import FeedforwardModel, train, calc_metrics
-from hyps.hyps import Hyperparameters
+from app.hyps import Hyperparameters
 
 
 def build_model(X_train: pd.DataFrame
@@ -11,7 +11,31 @@ def build_model(X_train: pd.DataFrame
                 , X_val: pd.DataFrame
                 , y_val: pd.DataFrame 
                 , X_test: pd.DataFrame 
-                , y_test: pd.DataFrame ) -> None:
+                , y_test: pd.DataFrame) -> None:
+    '''Completes the necessary steps to start training the neural
+    network model.
+    
+    Parameters;
+    ----------
+    X_train: pd.DataFrame
+        The training data.
+
+    y_train: pd.DataFrame
+        The training labels.
+
+    X_val: pd.DataFrame
+        The valdation data.
+
+    y_val: pd.DataFrame 
+        The validation labels.
+
+    X_test: pd.DataFrame 
+        The testing data.
+
+    y_test: pd.DataFrame 
+        The testing labels.
+
+    '''
 
     device = ""
     if torch.cuda.is_available():
@@ -26,9 +50,9 @@ def build_model(X_train: pd.DataFrame
     device = torch.device(device)
     model = FeedforwardModel(len(X_train.T), len(y_train.T), Hyperparameters.dropout_fraction, device)
     model.to(device)
-    train_dataset = PTDataset(X_train, y_train)
-    val_dataset = PTDataset(X_val, y_val)
-    test_dataset = PTDataset(X_test, y_test)
+    train_dataset = PTDataset(X_train, y_train, device)
+    val_dataset = PTDataset(X_val, y_val, device)
+    test_dataset = PTDataset(X_test, y_test, device)
 
     train(model, train_dataset, val_dataset, Hyperparameters.max_iters
           , Hyperparameters.batch_size, Hyperparameters.lr, Hyperparameters.early_stop, device)
@@ -44,3 +68,7 @@ def build_model(X_train: pd.DataFrame
     print('\tLoss (test): {0}\tAccuracy (test): {1}'.format(
         round(loss_test, 4), round(accuracy_test, 4))
     )
+
+    # Save the model
+    torch.save(model.state_dict(), 'app/saved_model/model.pth')
+    print("Model saved. Pth: app/saved_model/ ")

@@ -8,7 +8,25 @@ from app.tools.data_loader import load_data
 import torch
 from torch.utils.data import Dataset
 
-def downsample_data(data, rate):
+def downsample_data(data: pd.DataFrame
+                    , rate: int) -> None:
+    '''Reduce the size of the data based on provided rate.
+    Downsampling data to an appropriate size is important to improve the
+    model's training speed, as larger the dataset will result in longer 
+    training time. 
+    
+    Parameters:
+    ----------
+    
+    data: pd.DataFrame
+        The data that needs to be downsampled
+        
+    rate: int
+        The rate for downsampling. For example, a rate of 100 means
+        1 data point (row) will be selected every 100 data points (rows).
+        For a dataset of 1000 rows the result will ended up 10 rows after
+        downsampling.
+    '''
     downsampled_data = pd.DataFrame()
     selection_start = 0
     selection_end = rate
@@ -21,19 +39,91 @@ def downsample_data(data, rate):
         selection_end = selection_start + rate
     return downsampled_data
 
-def FFT(data):
+def FFT(data: pd.DataFrame) -> pd.DataFrame:
+    '''Calculates the correlation matrix in the data 
+    by using FFTconvolve method.
+    
+    Parameters:
+    ----------
+    
+    data: pd.DataFrame
+        The data of which the correlation calculation is needed.
+        
+    Returns:
+    -------
+
+    autocorr: pd.DataFrame
+        The correlation matrix.
+    '''
     autocorr = signal.fftconvolve(data,data[::-1],mode='full')
     return pd.DataFrame(autocorr)
 
 
-def standardize_data(train, test, val):
+def standardize_data(train: pd.DataFrame
+                     , test: pd.DataFrame
+                     , val: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    '''Standarize the data.
+    
+    Parameters:
+    ----------
+    
+    train: pd.DataFrame
+        The training dataset.
+    
+    test: pd.DataFrame
+        The testing dataset.
+        
+    val: pd.DataFrame
+        The validation dataset.
+        
+    Returns:
+    -------
+
+    train: pd.DataFrame
+        The standardized training dataset.
+    
+    test: pd.DataFrame
+        The standardized testing dataset.
+        
+    val: pd.DataFrame
+        The standardized validation dataset.
+        
+    '''
     scaler = StandardScaler()
     train = scaler.fit_transform(train)
     test = scaler.transform(test)
     val = scaler.transform(val)
     return pd.DataFrame(train), pd.DataFrame(test), pd.DataFrame(val)
 
-def one_hot_encoding(y_train, y_test, y_val):
+def one_hot_encoding(y_train: pd.DataFrame
+                     , y_test: pd.DataFrame
+                     , y_val: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+   '''One hot encode the categorical data
+   
+   Parameters:
+   ---------
+
+   y_train: pd.DataFrame
+       The training label.
+   
+   y_test: pd.DataFrame
+       The testing label.
+       
+   y_val: pd.DataFrame
+       The validation label.
+   
+   Returns:
+   -------
+       
+   y_train: pd.DataFrame
+       The one hot encoded training label.
+   
+   y_test: pd.DataFrame
+       The one hot encoded testing label.
+       
+   y_val: pd.DataFrame
+       The one hot encoded validation label.
+   '''
    encoder = OneHotEncoder()
    encoder.fit(y_train)
    y_train = encoder.transform(y_train).toarray()
@@ -42,26 +132,37 @@ def one_hot_encoding(y_train, y_test, y_val):
    return y_train, y_test, y_val
 
 class PTDataset(Dataset):
-    def __init__(self, data, labels):
+    '''Pytorch custom dataset is used to store both data and label.
+    This class will make batch process easier in the model training phase. 
+    
+    Attributes:
+    ----------
+    
+    data: pd.DataFrame
+        The data without the label in form of DataFrame
+
+    labels: pd.DataFrame
+        The label in form of DataFrame
+
+    device: str
+        The device of which the model will be trained on.
+    '''
+    def __init__(self, data: pd.DataFrame
+                 , labels: pd.DataFrame
+                 , device: str):
         self.data = data
         self.labels = labels
+        self.device = device
 
     def __len__(self):
         length = len(self.data)
         return length
     
     def __getitem__(self, index):
-        device = ""
-        if torch.cuda.is_available():
-            device = "cuda"
-        elif torch.backends.mps.is_available():
-            device = "mps"
-        else:
-            device = "cpu"
         data_point = torch.tensor(self.data.iloc[index, :]).float()
-        data_point.to(torch.device(device))
+        data_point.to(torch.device(self.device))
         label = torch.tensor(self.labels[index, :]).float()
-        label.to(torch.device(device))
+        label.to(torch.device(self.device))
 
         return data_point, label
     
@@ -69,13 +170,35 @@ class PTDataset(Dataset):
 def pre_process_data() -> (pd.DataFrame, pd.DataFrame
                            , pd.DataFrame, pd.DataFrame
                            , pd.DataFrame, pd.DataFrame):
-    """Preprocess the data before feeding into the actual model.
+    '''Preprocess the data before feeding into the actual model.
     The preprocessing package include downsampling the dataset, using 
     FFTconvolve to reveal the correlation between features, and splitting 
     data into training, validating, and testing sets. 
-    """
+
+    Returns:
+    -------
+
+    X_train: pd.DataFrame
+        The training data.
+    
+    y_train: pd.DataFrame
+        The training label.
+    
+    X_val: pd.DataFrame 
+        The validation data, used for validation during model training.
+    
+    y_val: pd.DataFrame
+        The validation label, used for validation during model training.
+
+    X_test: pd.DataFrame 
+        The testing data, used for testing the final model after trained.
+
+    y_test: pd.DataFrame
+        The testing label, used for testing the final model after trained.
+
+    '''
     print("Start loading data ...")
-    data_n, data_6g, data_10g, data_15g, data_20g, data_25g, data_30g, data_35g = load_data()
+    data_n, data_6g, data_10g, data_15g, data_20g, data_25g, data_30g = load_data()
     print("Data successfully loaded.")
 
     print("Downsamping data ... ")
