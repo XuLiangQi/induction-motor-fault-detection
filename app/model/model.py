@@ -63,6 +63,7 @@ def train(model: nn.Module,
         max_epochs: int,
         batch_size: int,
         lr: float,
+        early_stop: int,
         device: str):
     
     model.train()
@@ -122,7 +123,7 @@ def train(model: nn.Module,
                 round(accuracy_val, 4)))
         if new_best:
             output_msg += '\t*'
-        elif n_epochs_since_best >= 8:
+        elif n_epochs_since_best >= early_stop:
             # TODO: Replace with propoer detect_overfitting() function
             # that takes in the history of validation losses
             print('\tOverfitting detected - training terminated')
